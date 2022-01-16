@@ -46,10 +46,25 @@ func main() {
 			http.Error(writer, "falha ao trocar o token", http.StatusInternalServerError)
 			return
 		}
+
+		idToken, ok := token.Extra("id_token").(string)
+		if !ok {
+			http.Error(writer, "falha ao gerar o IDToken", http.StatusInternalServerError)
+		}
+
+		userInfo, err := provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+		if err != nil {
+			http.Error(writer, "erro ao pegar UserInfo", http.StatusInternalServerError)
+		}
+
 		resp := struct {
-			AccessToken *oauth2.Token //token de autorização
+			AccessToken *oauth2.Token //token de autorização,
+			IDToken     string
+			UserInfo    *oidc.UserInfo
 		}{
 			token,
+			idToken,
+			userInfo,
 		}
 
 		data, err := json.Marshal(resp)
